@@ -53,11 +53,14 @@ cipher = PKCS1_OAEP.new(public_key)
 decipher = PKCS1_OAEP.new(key)
 
 
+import heapq
+
 class EncryptedTrie(Trie):
     def __init__(self, public_key, decipher):
         super().__init__()
         self.public_key = public_key
         self.decipher = decipher
+        self.max_heap = []  # A list to store the max-heap of (frequency, word)
 
     def encrypt_word(self, word):
         # Encrypt the entire word using RSA encryption
@@ -84,32 +87,58 @@ class EncryptedTrie(Trie):
         node = self.search(prefix)  # Search using the plaintext prefix
         if not node:
             return []
+        
+        # Clear the heap before starting the new search to avoid duplicates
+        self.max_heap = []
+
         suggestions = []
         self._dfs_encrypted(node, suggestions)
-        # Sort the suggestions based on frequency in descending order
-        suggestions.sort(key=lambda x: x[1], reverse=True)
-        return [s[0] for s in suggestions]  # Return only the encrypted words
+        
+        # Sort suggestions using the max-heap, returning in order of highest frequency
+        sorted_suggestions = heapq.nlargest(len(suggestions), self.max_heap, key=lambda x: -x[0])
+        
+        # Return only the unique encrypted words
+        unique_encrypted_words = []
+        seen_words = set()
+        for _, encrypted_word in sorted_suggestions:
+            if encrypted_word not in seen_words:
+                unique_encrypted_words.append(encrypted_word)
+                seen_words.add(encrypted_word)
+        
+        return unique_encrypted_words
+
+
 
     def _dfs_encrypted(self, node, suggestions):
         if node.is_end_of_word:
-            # Append the encrypted word and its frequency
+        # Append the encrypted word and its frequency
             suggestions.append((node.encrypted_word, node.frequency))
+        # Add the word and its frequency to the heap (simulating a max-heap)
+            heapq.heappush(self.max_heap, (-node.frequency, node.encrypted_word))
         for char, child in node.children.items():
             self._dfs_encrypted(child, suggestions)
+
 
     def increase_word_frequency(self, word):
         node = self.search(word)
         if node and node.is_end_of_word:
             node.frequency += 1  # Increment the frequency count
+            # Add the updated frequency to the heap
+            heapq.heappush(self.max_heap, (-node.frequency, node.encrypted_word))
+
+
+# The rest of the code remains the same, including the client-side decryption.
+
 
 
 # Client-side decryption function
 def client_decrypt_suggestions(suggestions, decipher):
     decrypted_suggestions = []
-    for suggestion in suggestions:
-        decrypted_word = decipher.decrypt(suggestion).decode()
+    for encrypted_word in suggestions:  # Only decrypt the word
+        decrypted_word = decipher.decrypt(encrypted_word).decode()
         decrypted_suggestions.append(decrypted_word)
     return decrypted_suggestions
+
 
 
 # Predefined list of 100 words
