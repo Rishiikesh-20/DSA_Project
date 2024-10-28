@@ -244,9 +244,9 @@ def menu_select(stdscr, items):
         # Display all menu items with highlighting
         for idx, item in enumerate(items):
             if idx == current_row:
-                stdscr.addstr(idx + 1, 2, item, curses.A_REVERSE)  # Highlighted selection
+                stdscr.addstr(idx + 1, 2, " "+item+" ", curses.A_REVERSE)  # Highlighted selection
             else:
-                stdscr.addstr(idx + 1, 2, item)
+                stdscr.addstr(idx + 1, 2, " "+item+" ")
 
         stdscr.refresh()
 
