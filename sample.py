@@ -152,10 +152,9 @@ def main():
     while True:
         stdscr.clear()
         curses.curs_set(1)
+
         # User inputs a prefix to search for auto-complete suggestions
-        # stdscr.addstr(2, 2, "Enter a prefix to search (or type 'exit' to stop): ")
-        prefix = inputStr(stdscr)
-        # prefix = stdscr.getstr(2, 0)
+        prefix = inputStr(stdscr, encrypted_trie, decipher)
         stdscr.addstr(3, 3, f"\nPrefix: {prefix}")
 
         if prefix.lower() == 'exit':
@@ -170,13 +169,10 @@ def main():
 
         # Client decrypts the suggestions
         decrypted_suggestions = client_decrypt_suggestions(encrypted_suggestions, decipher)
-        # stdscr.addstr(4, 2, f"Autocomplete suggestions for '{prefix}'")
         selected_word = menu_select(stdscr, decrypted_suggestions)
         curses.curs_set(1)
+
         # User can choose a word from suggestions, which increases the frequency of that word
-        # stdscr.addstr(5, 2, f"Select a word from the suggestions (or 'none' to skip): ")
-        # selected_word = inputStr(stdscr, 5)
-        # selected_word = stdscr.getstr(9, 0)
         stdscr.clear()
         if selected_word in decrypted_suggestions:
             encrypted_trie.increase_word_frequency(selected_word)
@@ -188,19 +184,19 @@ def main():
             stdscr.getch()
             stdscr.clear()
 
-        # stdscr.refresh()
 
-def inputStr(stdscr):
-    input_str = []                   # List to store input characters
-    cursor_x = 0                     # Position of cursor within the input
+def inputStr(stdscr, encrypted_trie, decipher):
+    input_str = []  # List to store input characters
+    cursor_x = 0  # Position of cursor within the input
+    suggestions = []  # Store suggestions for autocomplete
 
     while True:
         # Display the input field
         stdscr.clear()
-        stdscr.addstr(1, 2, "Enter text (Press Enter to finish, ESC to cancel):")
+        stdscr.addstr(1, 2, "Enter text (Press Enter to finish, ESC to cancel, Tab for autocomplete):")
         stdscr.addstr(2, 2, "> ")
         stdscr.addstr(2, 4, "".join(input_str) + " ")  # Clear the last character position
-        stdscr.move(2, cursor_x+4)                       # Move cursor to current position
+        stdscr.move(2, cursor_x + 4)  # Move cursor to current position
         stdscr.refresh()
 
         # Get user input
@@ -211,7 +207,7 @@ def inputStr(stdscr):
         elif key in (curses.KEY_BACKSPACE, 127):  # Handle backspace
             if cursor_x > 0:
                 cursor_x -= 1
-                input_str.pop(cursor_x)            # Remove character at cursor position
+                input_str.pop(cursor_x)  # Remove character at cursor position
         elif key == curses.KEY_LEFT:  # Move cursor left
             if cursor_x > 0:
                 cursor_x -= 1
@@ -220,10 +216,22 @@ def inputStr(stdscr):
                 cursor_x += 1
         elif key == ord('\n'):  # Enter key to submit
             return "".join(input_str)
+        elif key == ord('\t'):  # Tab key for autocomplete
+            prefix = "".join(input_str)
+            encrypted_suggestions = encrypted_trie.autocomplete_encrypted(prefix)
+            if encrypted_suggestions:
+                decrypted_suggestions = client_decrypt_suggestions(encrypted_suggestions, decipher)
+                if decrypted_suggestions:
+                    # Autocomplete with the most frequent suggestion (first one in sorted list)
+                    most_frequent_suggestion = decrypted_suggestions[0]
+                    input_str = list(most_frequent_suggestion)
+                    cursor_x = len(input_str)
         elif 32 <= key <= 126:  # Printable characters (ASCII range for simplicity)
             input_str.insert(cursor_x, chr(key))  # Insert character at cursor position
             cursor_x += 1
+
     return ''.join(input_str)
+
 
 def menu_select(stdscr, items):
     # Initial setup
