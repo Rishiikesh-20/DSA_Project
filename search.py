@@ -1,11 +1,11 @@
-import curses
+import curses, heapq
+
 class TrieNode:
     def __init__(self):
         self.children = {}
         self.is_end_of_word = False
         self.encrypted_word = None  # To store the encrypted word at leaf nodes
         self.frequency = 0  # To track search frequency for this word
-
 
 class Trie:
     def __init__(self):
@@ -51,9 +51,6 @@ key = RSA.generate(2048)
 public_key = key.publickey()
 cipher = PKCS1_OAEP.new(public_key)
 decipher = PKCS1_OAEP.new(key)
-
-
-import heapq
 
 class EncryptedTrie(Trie):
     def __init__(self, public_key, decipher):
@@ -107,8 +104,6 @@ class EncryptedTrie(Trie):
         
         return unique_encrypted_words
 
-
-
     def _dfs_encrypted(self, node, suggestions):
         if node.is_end_of_word:
         # Append the encrypted word and its frequency
@@ -118,18 +113,12 @@ class EncryptedTrie(Trie):
         for char, child in node.children.items():
             self._dfs_encrypted(child, suggestions)
 
-
     def increase_word_frequency(self, word):
         node = self.search(word)
         if node and node.is_end_of_word:
             node.frequency += 1  # Increment the frequency count
             # Add the updated frequency to the heap
             heapq.heappush(self.max_heap, (-node.frequency, node.encrypted_word))
-
-
-# The rest of the code remains the same, including the client-side decryption.
-
-
 
 # Client-side decryption function
 def client_decrypt_suggestions(suggestions, decipher):
@@ -139,25 +128,8 @@ def client_decrypt_suggestions(suggestions, decipher):
         decrypted_suggestions.append(decrypted_word)
     return decrypted_suggestions
 
-
-
 # Predefined list of 100 words
-predefined_words = [
-    "apple", "application", "banana", "bat", "ball", "cat", "car", "camera",
-    "dog", "doll", "dinosaur", "elephant", "eagle", "egg", "fish", "frog",
-    "giraffe", "goat", "hat", "house", "ice", "igloo", "jacket", "juice",
-    "kangaroo", "key", "lamp", "lion", "monkey", "moon", "notebook", "needle",
-    "octopus", "owl", "pencil", "panda", "queen", "quilt", "rabbit", "robot",
-    "snake", "sun", "tiger", "table", "umbrella", "unicorn", "vase", "van",
-    "whale", "watch", "xylophone", "xenon", "yacht", "yak", "zebra", "zero",
-    "grape", "green", "blue", "yellow", "orange", "black", "white", "purple",
-    "red", "chair", "computer", "phone", "tablet", "book", "glass", "bottle",
-    "fan", "clock", "television", "radio", "speaker", "monitor", "laptop",
-    "printer", "keyboard", "mouse", "piano", "guitar", "drum", "violin",
-    "carrot", "broccoli", "potato", "tomato", "corn", "lettuce", "peach",
-    "pear", "plum", "watermelon", "strawberry", "blueberry", "raspberry"
-]
-
+predefined_words = ["the", "of", "and", "to", "a", "in", "for", "is", "on", "that", "by", "this", "with", "i", "you", "it", "not", "or", "be", "are", "from", "at", "as", "your", "all", "have", "new", "more", "an", "was", "we", "will", "home", "can", "us", "about", "if", "page", "my", "has", "search", "free", "but", "our", "one", "other", "do", "no", "information", "time", "they", "site", "he", "up", "may", "what", "which", "their", "news", "out", "use", "any", "there", "see", "only", "so", "his", "when", "contact", "here", "business", "who", "web", "also", "now", "help", "get", "pm", "view", "online", "c", "e", "first", "am", "been", "would", "how", "were", "me", "s", "services", "some", "these", "click", "its", "like", "service", "x", "than", "find", "price", "date", "back", "top", "people", "had", "list", "name", "just", "over", "state", "year", "day", "into", "email", "two", "health", "n", "world", "re", "next", "used", "go", "b", "work", "last", "most", "products", "music", "buy", "data", "make", "them", "should", "product", "system", "post", "her", "city", "t", "add", "policy", "number", "such", "please", "available", "copyright", "support", "message", "after", "best", "software", "then", "jan", "good", "video", "well", "d", "where", "info", "rights", "public", "books", "high", "school", "through", "m", "each", "links", "she", "review", "years", "order", "very", "privacy", "book", "items", "company", "r", "read", "group", "need", "many", "user", "said", "de", "does", "set", "under", "general", "research", "university", "january", "mail", "full", "map", "reviews", "program", "life", "know", "games", "way", "days", "management", "p", "part", "could", "great", "united", "hotel", "real", "f", "item", "international", "center", "ebay", "must", "store", "travel", "comments", "made", "development", "report", "off", "member", "details", "line", "terms", "before", "hotels", "did", "send", "right", "type", "because", "local", "those", "using", "results", "office", "education", "national", "car", "design", "take", "posted", "internet", "address", "community", "within", "states", "area", "want", "phone", "dvd", "shipping", "reserved", "subject", "between", "forum", "family", "l", "long", "based", "w", "code", "show", "o", "even", "black", "check", "special", "prices", "website", "index", "being", "women", "much", "sign", "file", "link", "open", "today", "technology", "south", "case", "project", "same", "pages", "uk", "version", "section", "own", "found", "sports", "house", "related", "security", "both", "g", "county", "american", "photo", "game", "members", "power", "while", "care", "network", "down", "computer", "systems", "three", "total", "place", "end", "following", "download", "h", "him", "without", "per", "access", "think", "north", "resources", "current", "posts", "big", "media", "law", "control", "water", "history", "pictures", "size", "art", "personal", "since", "including", "guide", "shop", "directory", "board", "location", "change", "white", "text", "small", "rating", "rate", "government", "children", "during", "usa", "return", "students", "v", "shopping", "account", "times", "sites", "level", "digital", "profile", "previous", "form", "events", "love", "old", "john", "main", "call", "hours", "image", "department", "title", "description", "non", "k", "y", "insurance", "another", "why", "shall", "property", "class", "cd", "still", "money", "quality", "every", "listing", "content", "country", "private", "little", "visit", "save", "tools", "low", "reply", "customer", "december", "compare", "movies", "include", "college", "value", "article", "york", "man", "card", "jobs", "provide", "j", "food", "source", "author", "different", "press", "u", "learn", "sale", "around", "print", "course", "job", "canada", "process", "teen", "room", "stock", "training", "too", "credit", "point", "join", "science", "men", "categories", "advanced", "west", "sales", "look", "english", "left", "team", "estate", "box", "conditions", "select", "windows", "photos", "gay", "thread", "week", "category", "note", "live", "large", "gallery", "table", "register", "however", "june", "october", "november", "market", "library", "really", "action", "start", "series", "model", "features", "air", "industry", "plan", "human", "provided", "tv", "yes", "required", "second", "hot", "accessories", "cost", "movie", "forums", "march", "la", "september", "better", "say", "questions", "july", "yahoo", "going", "medical"]
 
 # Main function to handle user input
 def main():
@@ -260,7 +232,6 @@ def inputStr(stdscr, encrypted_trie, decipher):
 
     return ''.join(input_str)
 
-
 def menu_select(stdscr, items):
     # Initial setup
     curses.curs_set(0)              # Hide the cursor
@@ -293,44 +264,3 @@ def menu_select(stdscr, items):
 
 if __name__ == "__main__":
     curses.wrapper(main())
-
-# # Main function to handle user input
-# def main():
-#     # Create an encrypted trie
-#     encrypted_trie = EncryptedTrie(public_key, decipher)
-
-#     # Insert predefined words into the Trie (stored as encrypted)
-#     for word in predefined_words:
-#         encrypted_trie.insert_encrypted(word)
-
-#     print(f"{len(predefined_words)} predefined words have been inserted into the Trie.")
-
-#     while True:
-#         # User inputs a prefix to search for auto-complete suggestions
-#         prefix = input("\nEnter a prefix to search (or type 'exit' to stop): ").strip()
-#         if prefix.lower() == 'exit':
-#             break
-
-#         encrypted_suggestions = encrypted_trie.autocomplete_encrypted(prefix)
-
-#         # If no suggestions found
-#         if not encrypted_suggestions:
-#             print(f"No suggestions found for prefix '{prefix}'")
-#             continue
-
-#         # Client decrypts the suggestions
-#         decrypted_suggestions = client_decrypt_suggestions(encrypted_suggestions, decipher)
-#         print(f"Autocomplete suggestions for '{prefix}': {decrypted_suggestions}")
-
-#         # User can choose a word from suggestions, which increases the frequency of that word
-#         selected_word = input(f"Select a word from the suggestions (or 'none' to skip): ").strip()
-#         if selected_word in decrypted_suggestions:
-#             encrypted_trie.increase_word_frequency(selected_word)
-#             print(f"Frequency of '{selected_word}' increased.")
-#         else:
-#             print("Word not found in suggestions or skipped.")
-
-
-# if __name__ == "__main__":
-#     main()
-
